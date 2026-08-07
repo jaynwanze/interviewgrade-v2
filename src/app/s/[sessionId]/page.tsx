@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { PendingFeedbackRecovery } from '@/components/session/pending-feedback-recovery';
 import { SessionPlayer } from '@/components/session/session-player';
 import { getSessionPlayerState } from '@/modules/session/repository';
 
@@ -103,11 +104,21 @@ export default async function SessionPage({ params }: SessionPageProps) {
   if (!currentQuestion) notFound();
 
   const latestCurrentAttempt = state.attempts
-    .filter(
-      (attempt) =>
-        attempt.response.questionId === currentQuestion.id && attempt.evaluation,
-    )
+    .filter((attempt) => attempt.response.questionId === currentQuestion.id)
     .sort((a, b) => b.response.attemptNumber - a.response.attemptNumber)[0];
+
+  if (latestCurrentAttempt && !latestCurrentAttempt.evaluation) {
+    return (
+      <PendingFeedbackRecovery
+        sessionId={state.session.id}
+        responseId={latestCurrentAttempt.response.id}
+        questionNumber={currentQuestion.position + 1}
+        questionCount={state.questions.length}
+        question={currentQuestion.prompt}
+        transcript={latestCurrentAttempt.response.transcript}
+      />
+    );
+  }
 
   return (
     <SessionPlayer
