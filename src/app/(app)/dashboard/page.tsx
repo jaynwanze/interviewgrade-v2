@@ -38,6 +38,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href={`/dashboard/billing?organization=${selected.id}`}
+            className="rounded-lg border px-4 py-2 text-sm font-medium"
+          >
+            Billing
+          </Link>
+          <Link
             href={`/dashboard/practices/new?organization=${selected.id}`}
             className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)]"
           >
