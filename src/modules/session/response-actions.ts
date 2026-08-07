@@ -34,6 +34,7 @@ export async function submitResponseAction(input: unknown) {
 
   return {
     responseId: response.id,
+    attemptNumber: response.attemptNumber,
     transcript: response.transcript,
     evaluation,
   };
