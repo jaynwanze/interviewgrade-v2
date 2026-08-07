@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 
+import { consumeRateLimit } from '@/lib/security/rate-limit';
 import { evaluateResponse } from '@/modules/evaluation/service';
 import { finalizeSession } from '@/modules/session/final-evaluation';
 import {
@@ -15,6 +16,18 @@ const responseInputSchema = z.object({
   questionId: z.string().uuid(),
   transcript: z.string().trim().min(1).max(20000),
 });
+
+async function consumeEvaluationLimit(
+  sessionId: string,
+  participantUserId: string | null,
+) {
+  return consumeRateLimit({
+    scope: `evaluation:${sessionId}`,
+    limit: 30,
+    windowSeconds: 60 * 60,
+    userId: participantUserId,
+  });
+}
 
 export async function submitResponseAction(input: unknown) {
   const parsed = responseInputSchema.parse(input);
@@ -30,6 +43,19 @@ export async function submitResponseAction(input: unknown) {
   }
 
   const { response } = await createResponseAttempt(parsed);
+  const rateLimit = await consumeEvaluationLimit(
+    parsed.sessionId,
+    state.session.participantUserId,
+  );
+
+  if (!rateLimit.allowed) {
+    return {
+      status: 'evaluation_error' as const,
+      responseId: response.id,
+      attemptNumber: response.attemptNumber,
+      transcript: response.transcript,
+    };
+  }
 
   try {
     const evaluation = await evaluateResponse(response.id);
@@ -83,6 +109,14 @@ export async function retryResponseEvaluationAction(input: unknown) {
     throw new Error('Response does not belong to the current session question.');
   }
 
+  const rateLimit = await consumeEvaluationLimit(
+    parsed.sessionId,
+    state.session.participantUserId,
+  );
+  if (!rateLimit.allowed) {
+    throw new Error('Feedback limit reached. Please try again later.');
+  }
+
   const evaluation = await evaluateResponse(attempt.response.id);
 
   return {
@@ -124,6 +158,14 @@ export async function continueSessionAction(input: unknown) {
   const isLastQuestion = completedQuestion.position === state.questions.length - 1;
 
   if (isLastQuestion) {
+    const rateLimit = await consumeEvaluationLimit(
+      parsed.sessionId,
+      state.session.participantUserId,
+    );
+    if (!rateLimit.allowed) {
+      throw new Error('Final feedback limit reached. Please try again later.');
+    }
+
     const evaluation = await finalizeSession(parsed.sessionId);
     return { completed: true as const, evaluation };
   }
