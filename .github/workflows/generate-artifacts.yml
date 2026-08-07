@@ -1,0 +1,39 @@
+name: Generate bootstrap artifacts
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://postgres:password@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.17.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Generate lockfile
+        run: pnpm install --lockfile-only
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate initial Drizzle migration
+        run: pnpm db:generate
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-artifacts
+          path: |
+            pnpm-lock.yaml
+            drizzle/
+          if-no-files-found: error
