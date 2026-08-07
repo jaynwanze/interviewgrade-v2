@@ -24,16 +24,6 @@ export function QuestionSpeakerButton({
     };
   }, []);
 
-  useEffect(() => {
-    audioRef.current?.pause();
-    audioRef.current = null;
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
-    setStatus('idle');
-  }, [questionId]);
-
   async function play() {
     if (status === 'playing') {
       audioRef.current?.pause();
