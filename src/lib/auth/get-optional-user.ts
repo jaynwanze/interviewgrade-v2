@@ -5,11 +5,9 @@ export async function getOptionalUser() {
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
   const id = typeof claims?.sub === 'string' ? claims.sub : null;
+  const email = typeof claims?.email === 'string' ? claims.email : undefined;
 
   if (error || !id) return null;
 
-  return {
-    id,
-    email: typeof claims.email === 'string' ? claims.email : undefined,
-  };
+  return { id, email };
 }
