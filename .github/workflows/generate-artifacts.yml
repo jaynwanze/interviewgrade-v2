@@ -35,5 +35,6 @@ jobs:
           name: bootstrap-artifacts
           path: |
             pnpm-lock.yaml
+            pnpm-workspace.yaml
             drizzle/
           if-no-files-found: error
