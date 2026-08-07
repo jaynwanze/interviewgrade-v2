@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { openai } from '@/lib/ai/openai';
 import { serverEnv } from '@/lib/env/server';
+import { consumeRateLimit } from '@/lib/security/rate-limit';
 import { getSessionPlayerState } from '@/modules/session/repository';
 
 export const runtime = 'nodejs';
@@ -34,6 +35,23 @@ export async function POST(request: Request) {
   const session = await getSessionPlayerState(sessionId.data);
   if (!session || session.session.status !== 'in_progress') {
     return NextResponse.json({ error: 'Session is not active.' }, { status: 404 });
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: `transcribe:${sessionId.data}`,
+    limit: 20,
+    windowSeconds: 60 * 60,
+    userId: session.session.participantUserId,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Too many transcription requests. Please try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) },
+      },
+    );
   }
 
   try {
