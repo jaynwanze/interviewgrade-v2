@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { openai } from '@/lib/ai/openai';
 import { serverEnv } from '@/lib/env/server';
+import { consumeRateLimit } from '@/lib/security/rate-limit';
 import { getSessionPlayerState } from '@/modules/session/repository';
 
 export const runtime = 'nodejs';
@@ -33,6 +34,23 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'Question does not belong to this session.' },
       { status: 400 },
+    );
+  }
+
+  const rateLimit = await consumeRateLimit({
+    scope: `tts:${parsed.data.sessionId}`,
+    limit: 40,
+    windowSeconds: 60 * 60,
+    userId: state.session.participantUserId,
+  });
+
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: 'Question audio limit reached. Please try again later.' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) },
+      },
     );
   }
 
