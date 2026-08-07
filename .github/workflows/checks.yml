@@ -14,8 +14,9 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci
       OPENAI_API_KEY: sk-ci-placeholder
-      OPENAI_EVALUATION_MODEL: gpt-5.5
-      OPENAI_GENERATION_MODEL: gpt-5.5
+      OPENAI_EVALUATION_MODEL: gpt-5.6-luna
+      OPENAI_GENERATION_MODEL: gpt-5.6-luna
+      OPENAI_TRANSCRIPTION_MODEL: gpt-4o-mini-transcribe
     steps:
       - uses: actions/checkout@v4
 
@@ -27,7 +28,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
