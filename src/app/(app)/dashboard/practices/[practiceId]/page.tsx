@@ -43,6 +43,12 @@ export default async function PracticePage({ params }: PracticePageProps) {
 
         <div className="flex flex-wrap gap-3">
           <Link
+            href={`/dashboard/practices/${draft.practice.id}/edit`}
+            className="rounded-lg border px-4 py-2 text-sm font-medium"
+          >
+            Edit draft
+          </Link>
+          <Link
             href={`/dashboard/practices/${draft.practice.id}/results`}
             className="rounded-lg border px-4 py-2 text-sm font-medium"
           >
