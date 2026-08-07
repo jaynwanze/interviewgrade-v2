@@ -13,13 +13,11 @@ export async function requireUser(): Promise<AuthenticatedUser> {
 
   const claims = data?.claims;
   const userId = typeof claims?.sub === 'string' ? claims.sub : null;
+  const email = typeof claims?.email === 'string' ? claims.email : undefined;
 
   if (error || !userId) {
     redirect('/login');
   }
 
-  return {
-    id: userId,
-    email: typeof claims.email === 'string' ? claims.email : undefined,
-  };
+  return { id: userId, email };
 }
