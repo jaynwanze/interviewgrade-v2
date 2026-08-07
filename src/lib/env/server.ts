@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 const serverEnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
+  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
@@ -19,6 +20,7 @@ const serverEnvSchema = z.object({
 
 export const serverEnv = serverEnvSchema.parse({
   DATABASE_URL: process.env.DATABASE_URL,
+  NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
