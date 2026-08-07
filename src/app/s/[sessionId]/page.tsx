@@ -85,7 +85,9 @@ export default async function SessionPage({ params }: SessionPageProps) {
     return (
       <main className="mx-auto flex min-h-screen max-w-xl items-center px-6 py-16 text-center">
         <div>
-          <h1 className="text-2xl font-semibold">This session is no longer active.</h1>
+          <h1 className="text-2xl font-semibold">
+            This session is no longer active.
+          </h1>
           <Link
             href={`/p/${state.practice.slug}`}
             className="mt-5 inline-block rounded-lg border px-4 py-2 font-medium"
@@ -109,6 +111,7 @@ export default async function SessionPage({ params }: SessionPageProps) {
 
   return (
     <SessionPlayer
+      key={currentQuestion.id}
       sessionId={state.session.id}
       practiceTitle={state.version.title}
       scenario={state.version.scenario}
