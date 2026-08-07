@@ -11,6 +11,10 @@ const serverEnvSchema = z.object({
     .string()
     .min(1)
     .default('gpt-4o-mini-transcribe'),
+  OPENAI_TTS_MODEL: z.string().min(1).default('tts-1'),
+  OPENAI_TTS_VOICE: z
+    .enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'])
+    .default('alloy'),
 });
 
 export const serverEnv = serverEnvSchema.parse({
@@ -22,4 +26,6 @@ export const serverEnv = serverEnvSchema.parse({
   OPENAI_EVALUATION_MODEL: process.env.OPENAI_EVALUATION_MODEL,
   OPENAI_GENERATION_MODEL: process.env.OPENAI_GENERATION_MODEL,
   OPENAI_TRANSCRIPTION_MODEL: process.env.OPENAI_TRANSCRIPTION_MODEL,
+  OPENAI_TTS_MODEL: process.env.OPENAI_TTS_MODEL,
+  OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE,
 });
