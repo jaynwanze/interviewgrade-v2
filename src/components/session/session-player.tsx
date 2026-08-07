@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react';
 import { QuestionSpeakerButton } from '@/components/session/question-speaker-button';
 import {
   continueSessionAction,
+  retryResponseEvaluationAction,
   submitResponseAction,
 } from '@/modules/session/response-actions';
 
@@ -70,6 +71,7 @@ export function SessionPlayer({
   const [feedback, setFeedback] = useState<StoredFeedback | null>(
     initialAttempt?.feedback ?? null,
   );
+  const [pendingResponseId, setPendingResponseId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,6 +93,13 @@ export function SessionPlayer({
   function cleanupStream() {
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
+  }
+
+  function showEvaluation(evaluation: StoredFeedback) {
+    setFeedback(evaluation);
+    setPendingResponseId(null);
+    setError(null);
+    setPhase('feedback');
   }
 
   async function processRecording(blob: Blob) {
@@ -127,14 +136,22 @@ export function SessionPlayer({
         transcript: nextTranscript,
       });
 
-      setFeedback({
+      if (result.status === 'evaluation_error') {
+        setPendingResponseId(result.responseId);
+        setError(
+          'Your answer and transcript were saved, but feedback could not be generated. Retry feedback without recording again.',
+        );
+        setPhase('error');
+        return;
+      }
+
+      showEvaluation({
         score: result.evaluation.score,
         summary: result.evaluation.summary,
         strengths: result.evaluation.strengths,
         improvements: result.evaluation.improvements,
         nextStep: result.evaluation.nextStep,
       });
-      setPhase('feedback');
     } catch (caught) {
       console.error(caught);
       setError(
@@ -146,11 +163,39 @@ export function SessionPlayer({
     }
   }
 
+  async function retryFeedback() {
+    if (!pendingResponseId) return;
+
+    try {
+      setError(null);
+      setPhase('evaluating');
+      const result = await retryResponseEvaluationAction({
+        sessionId,
+        responseId: pendingResponseId,
+      });
+
+      showEvaluation({
+        score: result.evaluation.score,
+        summary: result.evaluation.summary,
+        strengths: result.evaluation.strengths,
+        improvements: result.evaluation.improvements,
+        nextStep: result.evaluation.nextStep,
+      });
+    } catch (caught) {
+      console.error(caught);
+      setError(
+        'Your answer is still saved, but feedback is temporarily unavailable. You can retry again.',
+      );
+      setPhase('error');
+    }
+  }
+
   async function startRecording() {
     try {
       setError(null);
       setTranscript('');
       setFeedback(null);
+      setPendingResponseId(null);
       chunksRef.current = [];
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -215,9 +260,10 @@ export function SessionPlayer({
     }
   }
 
-  function retry() {
+  function retryRecording() {
     setTranscript('');
     setFeedback(null);
+    setPendingResponseId(null);
     setError(null);
     setPhase('ready');
   }
@@ -350,10 +396,14 @@ export function SessionPlayer({
                 <p className="mt-1 text-[var(--muted)]">{error}</p>
                 <button
                   type="button"
-                  onClick={retry}
+                  onClick={() =>
+                    pendingResponseId
+                      ? void retryFeedback()
+                      : retryRecording()
+                  }
                   className="mt-3 rounded-lg border px-3 py-2 font-medium"
                 >
-                  Try again
+                  {pendingResponseId ? 'Retry feedback' : 'Try again'}
                 </button>
               </div>
             ) : null}
@@ -424,7 +474,7 @@ export function SessionPlayer({
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={retry}
+                onClick={retryRecording}
                 className="rounded-xl border px-4 py-3 text-sm font-medium"
               >
                 Try again
