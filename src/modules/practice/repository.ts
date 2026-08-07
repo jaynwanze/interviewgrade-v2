@@ -173,7 +173,10 @@ export async function getPracticeDraft(
       .where(eq(rubricCriteria.practiceVersionId, version.id))
       .orderBy(rubricCriteria.position),
     db
-      .select()
+      .select({
+        questionId: questionRubricCriteria.questionId,
+        criterionId: questionRubricCriteria.criterionId,
+      })
       .from(questionRubricCriteria)
       .innerJoin(
         practiceQuestions,
@@ -192,7 +195,9 @@ export async function publishPractice(practiceId: string, userId: string) {
   }
 
   if (draft.questions.length === 0 || draft.criteria.length === 0) {
-    throw new Error('A practice needs questions and rubric criteria before publishing.');
+    throw new Error(
+      'A practice needs questions and rubric criteria before publishing.',
+    );
   }
 
   const totalWeight = draft.criteria.reduce(
@@ -264,8 +269,8 @@ export async function publishPractice(practiceId: string, userId: string) {
     }
 
     const mappingRows = draft.mappings.flatMap((row) => {
-      const questionId = oldToNewQuestion.get(row.question_rubric_criteria.questionId);
-      const criterionId = oldToNewCriterion.get(row.question_rubric_criteria.criterionId);
+      const questionId = oldToNewQuestion.get(row.questionId);
+      const criterionId = oldToNewCriterion.get(row.criterionId);
       return questionId && criterionId ? [{ questionId, criterionId }] : [];
     });
 
