@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { SharePracticeButton } from '@/components/practice/share-practice-button';
 import { requireUser } from '@/lib/auth/require-user';
 import { publishPracticeAction } from '@/modules/practice/actions';
 import { getPracticeDraft } from '@/modules/practice/repository';
@@ -55,12 +56,15 @@ export default async function PracticePage({ params }: PracticePageProps) {
             Results
           </Link>
           {draft.practice.status === 'published' ? (
-            <Link
-              href={`/p/${draft.practice.slug}`}
-              className="rounded-lg border px-4 py-2 text-sm font-medium"
-            >
-              Open participant view
-            </Link>
+            <>
+              <SharePracticeButton slug={draft.practice.slug} />
+              <Link
+                href={`/p/${draft.practice.slug}`}
+                className="rounded-lg border px-4 py-2 text-sm font-medium"
+              >
+                Open participant view
+              </Link>
+            </>
           ) : null}
           <form action={publishPracticeAction}>
             <input type="hidden" name="practiceId" value={draft.practice.id} />
