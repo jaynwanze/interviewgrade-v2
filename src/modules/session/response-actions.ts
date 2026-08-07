@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { evaluateResponse } from '@/modules/evaluation/service';
+import { finalizeSession } from '@/modules/session/final-evaluation';
 import {
   advanceSession,
   createResponseAttempt,
@@ -49,24 +50,35 @@ export async function continueSessionAction(input: unknown) {
 
   if (!state) throw new Error('Session not found.');
 
+  if (state.session.status === 'completed' && state.finalEvaluation) {
+    return { completed: true as const, evaluation: state.finalEvaluation };
+  }
+
   const completedQuestion = state.questions.find(
     (question) => question.id === parsed.completedQuestionId,
   );
   if (!completedQuestion) throw new Error('Question not found in session.');
 
-  // Idempotency: if a repeated Continue request arrives after the session has
-  // already advanced beyond this question, do not advance twice.
   if (state.session.currentQuestionPosition > completedQuestion.position) {
-    return state.session;
+    return { completed: false as const, session: state.session };
   }
 
   if (state.session.currentQuestionPosition !== completedQuestion.position) {
     throw new Error('Session question position is out of sync.');
   }
 
-  return advanceSession(
+  const isLastQuestion = completedQuestion.position === state.questions.length - 1;
+
+  if (isLastQuestion) {
+    const evaluation = await finalizeSession(parsed.sessionId);
+    return { completed: true as const, evaluation };
+  }
+
+  const session = await advanceSession(
     parsed.sessionId,
     completedQuestion.position + 1,
     state.questions.length,
   );
+
+  return { completed: false as const, session };
 }
