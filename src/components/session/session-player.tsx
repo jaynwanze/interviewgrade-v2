@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
+import { QuestionSpeakerButton } from '@/components/session/question-speaker-button';
 import {
   continueSessionAction,
   submitResponseAction,
@@ -261,9 +262,15 @@ export function SessionPlayer({
         <div className="flex flex-1 items-center justify-center py-12">
           <div className="w-full max-w-3xl space-y-8">
             <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
-                Your prompt
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Your prompt
+                </p>
+                <QuestionSpeakerButton
+                  sessionId={sessionId}
+                  questionId={question.id}
+                />
+              </div>
               <h1 className="text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
                 {question.prompt}
               </h1>
@@ -358,9 +365,13 @@ export function SessionPlayer({
         {feedback ? (
           <div className="space-y-7">
             <div>
-              <p className="text-sm font-medium text-[var(--muted)]">Practice feedback</p>
+              <p className="text-sm font-medium text-[var(--muted)]">
+                Practice feedback
+              </p>
               <div className="mt-2 flex items-end gap-2">
-                <span className="text-5xl font-semibold tracking-tight">{feedback.score}</span>
+                <span className="text-5xl font-semibold tracking-tight">
+                  {feedback.score}
+                </span>
                 <span className="pb-1 text-[var(--muted)]">/ 100</span>
               </div>
             </div>
@@ -423,7 +434,9 @@ export function SessionPlayer({
                 onClick={() => void continuePractice()}
                 className="rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-medium text-[var(--accent-foreground)]"
               >
-                {question.position === questionCount - 1 ? 'Finish' : 'Continue'}
+                {question.position === questionCount - 1
+                  ? 'Finish'
+                  : 'Continue'}
               </button>
             </div>
           </div>
