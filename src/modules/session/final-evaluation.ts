@@ -1,11 +1,15 @@
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { openai } from '@/lib/ai/openai';
 import { db } from '@/lib/db';
 import { sessionEvaluations, sessions } from '@/lib/db/schema';
 import { serverEnv } from '@/lib/env/server';
+import {
+  calculateAverageScore,
+  calculateWeightedScore,
+} from '@/lib/scoring';
 import { getSessionPlayerState } from '@/modules/session/repository';
-import { eq } from 'drizzle-orm';
 
 const synthesisSchema = z.object({
   strengths: z.array(z.string().min(1).max(500)).max(6),
@@ -44,21 +48,15 @@ export async function finalizeSession(sessionId: string) {
 
   const latest = getLatestEvaluatedAttempts(state.attempts);
   if (latest.size !== state.questions.length) {
-    throw new Error('Every question must have an evaluated response before completion.');
+    throw new Error(
+      'Every question must have an evaluated response before completion.',
+    );
   }
 
-  const criterionAccumulator = new Map<
-    string,
-    { sum: number; count: number; name: string; weight: number }
-  >();
+  const criterionAccumulator = new Map<string, number[]>();
 
   for (const criterion of state.criteria) {
-    criterionAccumulator.set(criterion.id, {
-      sum: 0,
-      count: 0,
-      name: criterion.name,
-      weight: criterion.weight,
-    });
+    criterionAccumulator.set(criterion.id, []);
   }
 
   for (const attempt of latest.values()) {
@@ -67,35 +65,22 @@ export async function finalizeSession(sessionId: string) {
     for (const [criterionId, score] of Object.entries(scores)) {
       const accumulator = criterionAccumulator.get(criterionId);
       if (!accumulator || typeof score !== 'number') continue;
-      accumulator.sum += score;
-      accumulator.count += 1;
+      accumulator.push(score);
     }
   }
 
   const criterionScores = Object.fromEntries(
-    [...criterionAccumulator.entries()].map(([criterionId, accumulator]) => [
+    [...criterionAccumulator.entries()].map(([criterionId, scores]) => [
       criterionId,
-      accumulator.count > 0
-        ? Math.round(accumulator.sum / accumulator.count)
-        : 0,
+      scores.length > 0 ? calculateAverageScore(scores) : 0,
     ]),
   );
 
-  const totalWeight = state.criteria.reduce(
-    (sum, criterion) => sum + criterion.weight,
-    0,
-  );
-
-  if (totalWeight <= 0) {
-    throw new Error('Rubric weights are invalid.');
-  }
-
-  const overallScore = Math.round(
-    state.criteria.reduce(
-      (sum, criterion) =>
-        sum + (criterionScores[criterion.id] ?? 0) * criterion.weight,
-      0,
-    ) / totalWeight,
+  const overallScore = calculateWeightedScore(
+    state.criteria.map((criterion) => ({
+      score: criterionScores[criterion.id] ?? 0,
+      weight: criterion.weight,
+    })),
   );
 
   const latestAttemptsForPrompt = state.questions.map((question) => {
