@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
+import { EmbedPracticeButton } from '@/components/practice/embed-practice-button';
 import { SharePracticeButton } from '@/components/practice/share-practice-button';
 import { requireUser } from '@/lib/auth/require-user';
 import { publishPracticeAction } from '@/modules/practice/actions';
@@ -58,6 +59,7 @@ export default async function PracticePage({ params }: PracticePageProps) {
           {draft.practice.status === 'published' ? (
             <>
               <SharePracticeButton slug={draft.practice.slug} />
+              <EmbedPracticeButton slug={draft.practice.slug} />
               <Link
                 href={`/p/${draft.practice.slug}`}
                 className="rounded-lg border px-4 py-2 text-sm font-medium"
