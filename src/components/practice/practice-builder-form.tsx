@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from 'react';
 
-import { createPracticeAction } from '@/modules/practice/actions';
+import {
+  createPracticeAction,
+  updatePracticeAction,
+} from '@/modules/practice/actions';
 
 type QuestionDraft = {
   prompt: string;
@@ -13,6 +16,23 @@ type CriterionDraft = {
   name: string;
   description: string;
   weight: number;
+};
+
+export type PracticeBuilderInitialDraft = {
+  title: string;
+  description?: string | null;
+  scenario: string;
+  instructions?: string | null;
+  difficulty?: string | null;
+  estimatedMinutes?: number | null;
+  questions: QuestionDraft[];
+  rubricCriteria: CriterionDraft[];
+};
+
+type PracticeBuilderFormProps = {
+  organizationId: string;
+  practiceId?: string;
+  initialDraft?: PracticeBuilderInitialDraft;
 };
 
 function rebalanceCriteria(criteria: CriterionDraft[]) {
@@ -26,28 +46,57 @@ function rebalanceCriteria(criteria: CriterionDraft[]) {
   });
 }
 
-export function PracticeBuilderForm({ organizationId }: { organizationId: string }) {
-  const [questions, setQuestions] = useState<QuestionDraft[]>([
-    { prompt: '', sampleAnswer: '' },
-  ]);
-  const [criteria, setCriteria] = useState<CriterionDraft[]>([
-    {
-      name: 'Communication',
-      description: 'Communicates clearly, specifically, and appropriately for the scenario.',
-      weight: 100,
-    },
-  ]);
+export function PracticeBuilderForm({
+  organizationId,
+  practiceId,
+  initialDraft,
+}: PracticeBuilderFormProps) {
+  const [questions, setQuestions] = useState<QuestionDraft[]>(
+    initialDraft?.questions.length
+      ? initialDraft.questions
+      : [{ prompt: '', sampleAnswer: '' }],
+  );
+  const [criteria, setCriteria] = useState<CriterionDraft[]>(
+    initialDraft?.rubricCriteria.length
+      ? initialDraft.rubricCriteria
+      : [
+          {
+            name: 'Communication',
+            description:
+              'Communicates clearly, specifically, and appropriately for the scenario.',
+            weight: 100,
+          },
+        ],
+  );
 
   const totalWeight = useMemo(
-    () => criteria.reduce((sum, criterion) => sum + Number(criterion.weight || 0), 0),
+    () =>
+      criteria.reduce(
+        (sum, criterion) => sum + Number(criterion.weight || 0),
+        0,
+      ),
     [criteria],
   );
 
   return (
-    <form action={createPracticeAction} className="space-y-10">
+    <form
+      action={practiceId ? updatePracticeAction : createPracticeAction}
+      className="space-y-10"
+    >
       <input type="hidden" name="organizationId" value={organizationId} />
-      <input type="hidden" name="questionsJson" value={JSON.stringify(questions)} />
-      <input type="hidden" name="rubricJson" value={JSON.stringify(criteria)} />
+      {practiceId ? (
+        <input type="hidden" name="practiceId" value={practiceId} />
+      ) : null}
+      <input
+        type="hidden"
+        name="questionsJson"
+        value={JSON.stringify(questions)}
+      />
+      <input
+        type="hidden"
+        name="rubricJson"
+        value={JSON.stringify(criteria)}
+      />
 
       <section className="space-y-5 rounded-2xl border p-6">
         <div>
@@ -64,6 +113,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
             required
             minLength={3}
             maxLength={200}
+            defaultValue={initialDraft?.title ?? ''}
             placeholder="Handling a price objection"
             className="w-full rounded-lg border bg-transparent px-3 py-2.5"
           />
@@ -74,6 +124,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
           <input
             name="description"
             maxLength={2000}
+            defaultValue={initialDraft?.description ?? ''}
             placeholder="Short internal or learner-facing description"
             className="w-full rounded-lg border bg-transparent px-3 py-2.5"
           />
@@ -86,6 +137,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
             required
             minLength={20}
             rows={6}
+            defaultValue={initialDraft?.scenario ?? ''}
             placeholder="You are a junior SaaS sales representative. A prospect likes the product but says the price is too high..."
             className="w-full rounded-lg border bg-transparent px-3 py-2.5"
           />
@@ -96,6 +148,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
           <textarea
             name="instructions"
             rows={3}
+            defaultValue={initialDraft?.instructions ?? ''}
             placeholder="Answer naturally as if this were a real conversation."
             className="w-full rounded-lg border bg-transparent px-3 py-2.5"
           />
@@ -104,7 +157,11 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block space-y-2">
             <span className="text-sm font-medium">Difficulty</span>
-            <select name="difficulty" defaultValue="Medium" className="w-full rounded-lg border bg-transparent px-3 py-2.5">
+            <select
+              name="difficulty"
+              defaultValue={initialDraft?.difficulty ?? 'Medium'}
+              className="w-full rounded-lg border bg-transparent px-3 py-2.5"
+            >
               <option>Easy</option>
               <option>Medium</option>
               <option>Hard</option>
@@ -117,7 +174,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
               type="number"
               min={1}
               max={180}
-              defaultValue={10}
+              defaultValue={initialDraft?.estimatedMinutes ?? 10}
               className="w-full rounded-lg border bg-transparent px-3 py-2.5"
             />
           </label>
@@ -134,7 +191,12 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
           </div>
           <button
             type="button"
-            onClick={() => setQuestions((current) => [...current, { prompt: '', sampleAnswer: '' }])}
+            onClick={() =>
+              setQuestions((current) => [
+                ...current,
+                { prompt: '', sampleAnswer: '' },
+              ])
+            }
             className="rounded-lg border px-3 py-2 text-sm font-medium"
           >
             + Question
@@ -143,13 +205,22 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
 
         <div className="space-y-4">
           {questions.map((question, index) => (
-            <div key={index} className="space-y-3 rounded-xl bg-[var(--surface)] p-4">
+            <div
+              key={index}
+              className="space-y-3 rounded-xl bg-[var(--surface)] p-4"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Question {index + 1}</span>
+                <span className="text-sm font-medium">
+                  Question {index + 1}
+                </span>
                 {questions.length > 1 ? (
                   <button
                     type="button"
-                    onClick={() => setQuestions((current) => current.filter((_, i) => i !== index))}
+                    onClick={() =>
+                      setQuestions((current) =>
+                        current.filter((_, i) => i !== index),
+                      )
+                    }
                     className="text-sm text-[var(--muted)]"
                   >
                     Remove
@@ -161,7 +232,9 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
                 onChange={(event) =>
                   setQuestions((current) =>
                     current.map((item, i) =>
-                      i === index ? { ...item, prompt: event.target.value } : item,
+                      i === index
+                        ? { ...item, prompt: event.target.value }
+                        : item,
                     ),
                   )
                 }
@@ -175,7 +248,9 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
                 onChange={(event) =>
                   setQuestions((current) =>
                     current.map((item, i) =>
-                      i === index ? { ...item, sampleAnswer: event.target.value } : item,
+                      i === index
+                        ? { ...item, sampleAnswer: event.target.value }
+                        : item,
                     ),
                   )
                 }
@@ -214,16 +289,23 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
 
         <div className="space-y-4">
           {criteria.map((criterion, index) => (
-            <div key={index} className="grid gap-3 rounded-xl bg-[var(--surface)] p-4 sm:grid-cols-[1fr_110px]">
+            <div
+              key={index}
+              className="grid gap-3 rounded-xl bg-[var(--surface)] p-4 sm:grid-cols-[1fr_110px]"
+            >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Criterion {index + 1}</span>
+                  <span className="text-sm font-medium">
+                    Criterion {index + 1}
+                  </span>
                   {criteria.length > 1 ? (
                     <button
                       type="button"
                       onClick={() =>
                         setCriteria((current) =>
-                          rebalanceCriteria(current.filter((_, i) => i !== index)),
+                          rebalanceCriteria(
+                            current.filter((_, i) => i !== index),
+                          ),
                         )
                       }
                       className="text-sm text-[var(--muted)]"
@@ -237,7 +319,9 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
                   onChange={(event) =>
                     setCriteria((current) =>
                       current.map((item, i) =>
-                        i === index ? { ...item, name: event.target.value } : item,
+                        i === index
+                          ? { ...item, name: event.target.value }
+                          : item,
                       ),
                     )
                   }
@@ -250,7 +334,9 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
                   onChange={(event) =>
                     setCriteria((current) =>
                       current.map((item, i) =>
-                        i === index ? { ...item, description: event.target.value } : item,
+                        i === index
+                          ? { ...item, description: event.target.value }
+                          : item,
                       ),
                     )
                   }
@@ -283,8 +369,15 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
           ))}
         </div>
 
-        <p className={totalWeight === 100 ? 'text-sm text-[var(--muted)]' : 'text-sm font-medium'}>
-          Total weight: {totalWeight}% {totalWeight === 100 ? '✓' : '— must equal 100%'}
+        <p
+          className={
+            totalWeight === 100
+              ? 'text-sm text-[var(--muted)]'
+              : 'text-sm font-medium'
+          }
+        >
+          Total weight: {totalWeight}%{' '}
+          {totalWeight === 100 ? '✓' : '— must equal 100%'}
         </p>
       </section>
 
@@ -294,7 +387,7 @@ export function PracticeBuilderForm({ organizationId }: { organizationId: string
           disabled={totalWeight !== 100}
           className="rounded-lg bg-[var(--accent)] px-5 py-3 font-medium text-[var(--accent-foreground)] disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Save draft
+          {practiceId ? 'Save changes' : 'Save draft'}
         </button>
       </div>
     </form>
