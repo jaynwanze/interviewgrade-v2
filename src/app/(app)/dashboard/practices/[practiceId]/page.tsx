@@ -41,7 +41,13 @@ export default async function PracticePage({ params }: PracticePageProps) {
           ) : null}
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/dashboard/practices/${draft.practice.id}/results`}
+            className="rounded-lg border px-4 py-2 text-sm font-medium"
+          >
+            Results
+          </Link>
           {draft.practice.status === 'published' ? (
             <Link
               href={`/p/${draft.practice.slug}`}
@@ -56,7 +62,9 @@ export default async function PracticePage({ params }: PracticePageProps) {
               type="submit"
               className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)]"
             >
-              {draft.practice.status === 'published' ? 'Publish new version' : 'Publish'}
+              {draft.practice.status === 'published'
+                ? 'Publish new version'
+                : 'Publish'}
             </button>
           </form>
         </div>
@@ -85,7 +93,10 @@ export default async function PracticePage({ params }: PracticePageProps) {
             <h2 className="font-semibold">Questions</h2>
             <div className="mt-4 space-y-3">
               {draft.questions.map((question) => (
-                <div key={question.id} className="rounded-xl bg-[var(--surface)] p-4">
+                <div
+                  key={question.id}
+                  className="rounded-xl bg-[var(--surface)] p-4"
+                >
                   <p className="text-xs font-medium text-[var(--muted)]">
                     Question {question.position + 1}
                   </p>
@@ -100,15 +111,24 @@ export default async function PracticePage({ params }: PracticePageProps) {
           <div className="flex items-center justify-between gap-3">
             <h2 className="font-semibold">Rubric</h2>
             <span className="text-sm text-[var(--muted)]">
-              {draft.criteria.reduce((sum, criterion) => sum + criterion.weight, 0)}%
+              {draft.criteria.reduce(
+                (sum, criterion) => sum + criterion.weight,
+                0,
+              )}
+              %
             </span>
           </div>
           <div className="mt-4 space-y-4">
             {draft.criteria.map((criterion) => (
-              <div key={criterion.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+              <div
+                key={criterion.id}
+                className="border-b pb-4 last:border-b-0 last:pb-0"
+              >
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-medium">{criterion.name}</p>
-                  <span className="text-sm text-[var(--muted)]">{criterion.weight}%</span>
+                  <span className="text-sm text-[var(--muted)]">
+                    {criterion.weight}%
+                  </span>
                 </div>
                 <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
                   {criterion.description}
