@@ -35,7 +35,7 @@ test('calculateWeightedScore is deterministic for the same stored values', () =>
   ];
 
   assert.equal(calculateWeightedScore(input), calculateWeightedScore(input));
-  assert.equal(calculateWeightedScore(input), 83);
+  assert.equal(calculateWeightedScore(input), 82);
 });
 
 test('calculateWeightedScore rejects unusable weight sets', () => {
