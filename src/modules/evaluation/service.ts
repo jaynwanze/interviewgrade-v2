@@ -1,5 +1,6 @@
 import { openai } from '@/lib/ai/openai';
 import { serverEnv } from '@/lib/env/server';
+import { calculateWeightedScore } from '@/lib/scoring';
 import {
   getResponseEvaluationContext,
   saveResponseEvaluation,
@@ -96,16 +97,11 @@ export async function evaluateResponse(responseId: string) {
   const scoreByCriterion = new Map(
     output.criterionScores.map((item) => [item.criterionId, item.score]),
   );
-  const totalWeight = context.criteria.reduce(
-    (sum, criterion) => sum + criterion.weight,
-    0,
-  );
-  const weightedScore = Math.round(
-    context.criteria.reduce(
-      (sum, criterion) =>
-        sum + (scoreByCriterion.get(criterion.id) ?? 0) * criterion.weight,
-      0,
-    ) / totalWeight,
+  const weightedScore = calculateWeightedScore(
+    context.criteria.map((criterion) => ({
+      score: scoreByCriterion.get(criterion.id) ?? 0,
+      weight: criterion.weight,
+    })),
   );
 
   await saveResponseEvaluation({
