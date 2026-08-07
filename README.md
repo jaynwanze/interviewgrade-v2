@@ -39,6 +39,7 @@ Interview/career practice is the first wedge. The domain is intentionally generi
 - PostgreSQL + Drizzle ORM/migrations
 - Supabase Auth and managed Postgres infrastructure
 - OpenAI generation, transcription, evaluation and optional question speech
+- Stripe Checkout, Customer Portal and signed subscription webhooks
 - Vercel deployment target
 - Zod validation at external/AI boundaries
 
@@ -49,6 +50,7 @@ Supabase is deliberately **not** the application query architecture. Business da
 ```text
 Profile
 Organization
+  ├─ Subscription
   ↓
 Practice
   ↓
@@ -92,7 +94,12 @@ InterviewGrade evaluation is coaching feedback, not personality/emotion detectio
 - deterministic final scoring + AI coaching synthesis
 - participant final report
 - creator result overview + individual transcripts/attempts
+- organization-scoped Stripe subscription foundation
+- owner/admin Checkout and Customer Portal management
+- signed webhook reconciliation of Stripe subscription state
 - typecheck, lint, deterministic score tests and production build in CI
+
+Billing state is established before entitlements. The application does not yet impose arbitrary free/paid feature limits; packaging can be decided independently and mapped onto the canonical organization subscription state later.
 
 ## Intentionally not in v2 MVP
 
@@ -107,6 +114,12 @@ hosted share link → iframe/embed → webhook/API only when customer demand pro
 ## Embedding a practice
 
 Published practices expose a creator-side **Copy embed code** action. It generates an iframe pointing at `/embed/<slug>` and includes `allow="microphone"`, which is required for participants to record voice answers inside the embedded experience.
+
+## Billing
+
+Subscriptions belong to an organization rather than an individual user. Owners/admins can start Stripe Checkout or open the Customer Portal. Stripe remains the source of truth: signed webhook events reconcile customer, subscription, price and status data into PostgreSQL. Price amount and cadence live in Stripe and are selected with `STRIPE_PRICE_ID`.
+
+See [`docs/SETUP.md`](docs/SETUP.md) for the required Stripe webhook and environment configuration.
 
 ## Local setup
 

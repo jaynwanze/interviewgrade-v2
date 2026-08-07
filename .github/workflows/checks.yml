@@ -20,6 +20,9 @@ jobs:
       OPENAI_TRANSCRIPTION_MODEL: gpt-4o-mini-transcribe
       OPENAI_TTS_MODEL: tts-1
       OPENAI_TTS_VOICE: alloy
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+      STRIPE_PRICE_ID: price_ci_placeholder
     steps:
       - uses: actions/checkout@v5
 

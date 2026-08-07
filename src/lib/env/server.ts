@@ -16,6 +16,9 @@ const serverEnvSchema = z.object({
   OPENAI_TTS_VOICE: z
     .enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'])
     .default('alloy'),
+  STRIPE_SECRET_KEY: z.string().min(1),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  STRIPE_PRICE_ID: z.string().min(1),
 });
 
 export const serverEnv = serverEnvSchema.parse({
@@ -30,4 +33,7 @@ export const serverEnv = serverEnvSchema.parse({
   OPENAI_TRANSCRIPTION_MODEL: process.env.OPENAI_TRANSCRIPTION_MODEL,
   OPENAI_TTS_MODEL: process.env.OPENAI_TTS_MODEL,
   OPENAI_TTS_VOICE: process.env.OPENAI_TTS_VOICE,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRICE_ID: process.env.STRIPE_PRICE_ID,
 });
