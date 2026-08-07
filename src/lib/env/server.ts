@@ -5,8 +5,12 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_EVALUATION_MODEL: z.string().min(1).default('gpt-5.5'),
-  OPENAI_GENERATION_MODEL: z.string().min(1).default('gpt-5.5'),
+  OPENAI_EVALUATION_MODEL: z.string().min(1).default('gpt-5.6-luna'),
+  OPENAI_GENERATION_MODEL: z.string().min(1).default('gpt-5.6-luna'),
+  OPENAI_TRANSCRIPTION_MODEL: z
+    .string()
+    .min(1)
+    .default('gpt-4o-mini-transcribe'),
 });
 
 export const serverEnv = serverEnvSchema.parse({
@@ -17,4 +21,5 @@ export const serverEnv = serverEnvSchema.parse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_EVALUATION_MODEL: process.env.OPENAI_EVALUATION_MODEL,
   OPENAI_GENERATION_MODEL: process.env.OPENAI_GENERATION_MODEL,
+  OPENAI_TRANSCRIPTION_MODEL: process.env.OPENAI_TRANSCRIPTION_MODEL,
 });
