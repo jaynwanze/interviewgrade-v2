@@ -87,7 +87,11 @@ export async function createSubscriptionCheckout(input: {
   );
 
   if (!session.url) throw new Error('Stripe did not return a checkout URL.');
-  return session;
+
+  return {
+    id: session.id,
+    url: session.url,
+  };
 }
 
 export async function createBillingPortalSession(input: {
