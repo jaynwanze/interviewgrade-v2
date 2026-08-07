@@ -15,6 +15,13 @@
       "when": 1786105200000,
       "tag": "0001_lock_down_data_api",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786107600000,
+      "tag": "0002_organization_billing",
+      "breakpoints": true
     }
   ]
 }
