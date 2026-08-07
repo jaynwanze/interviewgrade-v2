@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "pnpm typecheck && pnpm lint && pnpm build",
+    "test": "node --experimental-strip-types --test src/lib/scoring.test.ts",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
