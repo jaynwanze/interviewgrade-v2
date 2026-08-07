@@ -13,6 +13,8 @@ import {
 } from '@/lib/db/schema';
 import { getPublishedPracticeBySlug } from '@/modules/practice/repository';
 
+export const MAX_RESPONSE_ATTEMPTS_PER_QUESTION = 5;
+
 export async function startPracticeSession(
   slug: string,
   participantUserId?: string | null,
@@ -131,7 +133,14 @@ export async function createResponseAttempt(input: {
       ),
     );
 
-  const attemptNumber = (attemptResult?.maxAttempt ?? 0) + 1;
+  const previousAttempt = attemptResult?.maxAttempt ?? 0;
+  if (previousAttempt >= MAX_RESPONSE_ATTEMPTS_PER_QUESTION) {
+    throw new Error(
+      `This question is limited to ${MAX_RESPONSE_ATTEMPTS_PER_QUESTION} attempts. Continue to the next question.`,
+    );
+  }
+
+  const attemptNumber = previousAttempt + 1;
 
   const [response] = await db
     .insert(responses)
