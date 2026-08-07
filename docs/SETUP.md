@@ -8,6 +8,7 @@ InterviewGrade deliberately treats Supabase as infrastructure rather than the ap
 - pnpm 11.17+
 - a Supabase project
 - an OpenAI API key
+- a Stripe account for organization subscriptions
 
 ## 2. Environment
 
@@ -30,15 +31,18 @@ OPENAI_GENERATION_MODEL
 OPENAI_TRANSCRIPTION_MODEL
 OPENAI_TTS_MODEL
 OPENAI_TTS_VOICE
+STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET
+STRIPE_PRICE_ID
 ```
 
 Use the Postgres connection string supplied by the Supabase project's **Connect** screen for `DATABASE_URL`; do not hand-construct credentials. The Postgres client disables prepared statements so it also works when a transaction-pooling connection is selected for deployment.
 
-`NEXT_PUBLIC_SITE_URL` must be the canonical application origin: `http://localhost:3000` locally and the real HTTPS origin in production. It is used to construct trusted authentication callback URLs.
+`NEXT_PUBLIC_SITE_URL` must be the canonical application origin: `http://localhost:3000` locally and the real HTTPS origin in production. It is used to construct trusted authentication, Stripe Checkout and billing-portal return URLs.
 
-The browser receives only `NEXT_PUBLIC_*` values. `DATABASE_URL` and `OPENAI_API_KEY` are server-only.
+The browser receives only `NEXT_PUBLIC_*` values. `DATABASE_URL`, `OPENAI_API_KEY`, `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are server-only.
 
-OpenAI model names are configuration rather than being scattered through components. The committed defaults are starting points and can be changed without changing product code.
+OpenAI model names and the Stripe recurring price ID are configuration rather than being scattered through components. They can be changed without changing product code.
 
 ## 3. Install
 
@@ -52,7 +56,7 @@ pnpm install --frozen-lockfile
 pnpm db:migrate
 ```
 
-Migrations are generated from `src/lib/db/schema.ts` and committed under `drizzle/`.
+Migrations are generated from the Drizzle schemas under `src/lib/db/` and committed under `drizzle/`.
 
 The v2 application does **not** query business tables through the Supabase Data API. Do not grant `anon` or `authenticated` direct CRUD access to these tables. If the project's API settings expose the `public` schema, keep table privileges restricted; server application access uses `DATABASE_URL` instead.
 
@@ -78,7 +82,36 @@ https://interviewgrade.io/auth/callback
 
 The app uses the Supabase SSR cookie flow and verifies server-side JWT claims with `auth.getClaims()` before protected mutations. The callback accepts only local-path redirects, preventing an arbitrary external `next` URL from becoming an open redirect.
 
-## 6. Run locally
+## 6. Configure Stripe billing
+
+Create a recurring Stripe Price for the first organization subscription offering and set its `price_...` identifier as `STRIPE_PRICE_ID`. The amount and cadence live in Stripe rather than application code.
+
+Set the server-side Stripe secret key as `STRIPE_SECRET_KEY`.
+
+Configure a webhook endpoint pointing at:
+
+```text
+https://YOUR_APP_ORIGIN/api/stripe/webhook
+```
+
+Subscribe the endpoint to these events:
+
+```text
+checkout.session.completed
+customer.subscription.created
+customer.subscription.updated
+customer.subscription.deleted
+```
+
+Copy the endpoint signing secret into `STRIPE_WEBHOOK_SECRET`.
+
+For local webhook testing, forward Stripe webhook events to `http://localhost:3000/api/stripe/webhook` using Stripe's supported local tooling and use that forwarding session's signing secret locally.
+
+Stripe is the source of truth for subscription state. A successful browser return from Checkout does not itself activate a subscription; signed webhook events reconcile the organization billing row. Only organization owners/admins can start Checkout or open the billing portal.
+
+The billing foundation intentionally does not enforce product limits yet. Add entitlements only after packaging has been decided so pricing experiments do not leak into the core practice domain.
+
+## 7. Run locally
 
 ```bash
 pnpm dev
@@ -95,13 +128,13 @@ Sign up
 → create/generate practice
 → edit draft
 → publish
-→ copy share link
+→ copy share link or embed code
 ```
 
 Participant flow:
 
 ```text
-Open /p/<slug>
+Open /p/<slug> or an embedded practice
 → start session
 → hear/read question
 → record answer
@@ -111,7 +144,7 @@ Open /p/<slug>
 → final report
 ```
 
-## 7. Quality checks
+## 8. Quality checks
 
 Run the same checks as CI:
 
@@ -130,7 +163,7 @@ pnpm check
 
 The first test suite covers deterministic score arithmetic. Provider-generated prose is deliberately not trusted to calculate aggregate scores.
 
-## 8. Vercel
+## 9. Vercel
 
 Connect this repository to Vercel and set the same environment variables there. Do not commit `.env.local` or any production secret.
 
@@ -145,13 +178,17 @@ Before promoting a deployment, verify:
 5. manual practice creation/editing;
 6. AI practice generation;
 7. publication and copied share link;
-8. public session creation;
-9. browser microphone permission;
-10. transcription and rubric feedback;
-11. retry/continue behavior;
-12. question speech playback;
-13. final report;
-14. creator results view.
+8. embed code and microphone permission on a test host page;
+9. public session creation;
+10. browser microphone permission;
+11. transcription and rubric feedback;
+12. retry/continue behavior;
+13. question speech playback;
+14. final report;
+15. creator results view;
+16. Stripe Checkout in test mode;
+17. signed webhook subscription reconciliation;
+18. Stripe Customer Portal return flow.
 
 ## Current retention behavior
 
