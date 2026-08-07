@@ -9,6 +9,7 @@ import {
   publishPractice,
 } from '@/modules/practice/repository';
 import { practiceDraftInputSchema } from '@/modules/practice/schemas';
+import { updatePracticeDraft } from '@/modules/practice/update-draft';
 
 function parseJson(value: FormDataEntryValue | null) {
   if (typeof value !== 'string') return null;
@@ -19,11 +20,10 @@ function parseJson(value: FormDataEntryValue | null) {
   }
 }
 
-export async function createPracticeAction(formData: FormData) {
-  const user = await requireUser();
-
+function parsePracticeForm(formData: FormData) {
   const estimatedRaw = formData.get('estimatedMinutes');
-  const parsed = practiceDraftInputSchema.safeParse({
+
+  return practiceDraftInputSchema.safeParse({
     organizationId: formData.get('organizationId'),
     title: formData.get('title'),
     description: formData.get('description') || undefined,
@@ -37,6 +37,11 @@ export async function createPracticeAction(formData: FormData) {
     questions: parseJson(formData.get('questionsJson')),
     rubricCriteria: parseJson(formData.get('rubricJson')),
   });
+}
+
+export async function createPracticeAction(formData: FormData) {
+  const user = await requireUser();
+  const parsed = parsePracticeForm(formData);
 
   if (!parsed.success) {
     redirect('/dashboard/practices/new?error=invalid_practice');
@@ -46,11 +51,28 @@ export async function createPracticeAction(formData: FormData) {
   redirect(`/dashboard/practices/${practice.id}`);
 }
 
+const updateSchema = z.object({ practiceId: z.string().uuid() });
+
+export async function updatePracticeAction(formData: FormData) {
+  const user = await requireUser();
+  const id = updateSchema.safeParse({ practiceId: formData.get('practiceId') });
+  const parsed = parsePracticeForm(formData);
+
+  if (!id.success || !parsed.success) {
+    redirect('/dashboard?error=invalid_practice');
+  }
+
+  await updatePracticeDraft(id.data.practiceId, user.id, parsed.data);
+  redirect(`/dashboard/practices/${id.data.practiceId}?saved=1`);
+}
+
 const publishSchema = z.object({ practiceId: z.string().uuid() });
 
 export async function publishPracticeAction(formData: FormData) {
   const user = await requireUser();
-  const parsed = publishSchema.safeParse({ practiceId: formData.get('practiceId') });
+  const parsed = publishSchema.safeParse({
+    practiceId: formData.get('practiceId'),
+  });
 
   if (!parsed.success) {
     redirect('/dashboard');
