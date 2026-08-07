@@ -11,7 +11,7 @@ const serverEnvSchema = z.object({
     .string()
     .min(1)
     .default('gpt-4o-mini-transcribe'),
-  OPENAI_TTS_MODEL: z.string().min(1).default('tts-1'),
+  OPENAI_TTS_MODEL: z.enum(['tts-1', 'tts-1-hd']).default('tts-1'),
   OPENAI_TTS_VOICE: z
     .enum(['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'])
     .default('alloy'),
