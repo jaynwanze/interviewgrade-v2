@@ -12,8 +12,7 @@ import {
   sessions,
 } from '@/lib/db/schema';
 import { getPublishedPracticeBySlug } from '@/modules/practice/repository';
-
-export const MAX_RESPONSE_ATTEMPTS_PER_QUESTION = 5;
+import { MAX_RESPONSE_ATTEMPTS_PER_QUESTION } from '@/modules/session/constants';
 
 export async function startPracticeSession(
   slug: string,
