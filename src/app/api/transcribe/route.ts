@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { openai } from '@/lib/ai/openai';
+import { serverEnv } from '@/lib/env/server';
 import { getSessionPlayerState } from '@/modules/session/repository';
 
 export const runtime = 'nodejs';
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   try {
     const transcript = await openai.audio.transcriptions.create({
       file,
-      model: 'whisper-1',
+      model: serverEnv.OPENAI_TRANSCRIPTION_MODEL,
       response_format: 'text',
     });
 
