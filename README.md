@@ -15,7 +15,7 @@ Scenario + questions + rubric
   ↓
 Publish immutable version
   ↓
-Share /p/<slug>
+Share /p/<slug> or embed /embed/<slug>
   ↓
 Participant answers by voice
   ↓
@@ -82,6 +82,7 @@ InterviewGrade evaluation is coaching feedback, not personality/emotion detectio
 - draft editing
 - versioned publishing
 - shareable public practice URL
+- embeddable practice player with microphone permission guidance
 - anonymous or signed-in participant session
 - browser microphone recording without client FFmpeg
 - server-side transcription
@@ -102,6 +103,10 @@ Distribution is intentionally ordered:
 ```text
 hosted share link → iframe/embed → webhook/API only when customer demand proves it
 ```
+
+## Embedding a practice
+
+Published practices expose a creator-side **Copy embed code** action. It generates an iframe pointing at `/embed/<slug>` and includes `allow="microphone"`, which is required for participants to record voice answers inside the embedded experience.
 
 ## Local setup
 
