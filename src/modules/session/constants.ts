@@ -1,0 +1,1 @@
+export const MAX_RESPONSE_ATTEMPTS_PER_QUESTION = 5;
